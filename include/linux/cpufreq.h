@@ -23,6 +23,10 @@
 
 #define CPUFREQ_NAME_LEN 16
 
+#ifdef CONFIG_HARDLIMIT
+#define CPU_MAX_FREQ_LIMIT 2265600
+#endif
+
 
 /*********************************************************************
  *                     CPUFREQ NOTIFIER INTERFACE                    *
@@ -355,7 +359,7 @@ enum {
 
 #define MIN_TOUCH_LIMIT		1728000
 #define MIN_TOUCH_HIGH_LIMIT	2265600
-#define MIN_TOUCH_LIMIT_SECOND	1190400
+#define MIN_TOUCH_LIMIT_SECOND	300000
 
 enum {
 	DVFS_NO_ID			= 0,

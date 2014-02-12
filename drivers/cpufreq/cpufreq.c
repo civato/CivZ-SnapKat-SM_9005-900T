@@ -32,6 +32,10 @@
 
 #include <trace/events/power.h>
 
+#ifdef CONFIG_HARDLIMIT
+int maxlimit = CPU_MAX_FREQ_LIMIT;
+#endif
+
 /**
  * The "cpufreq driver" - the arch- or hardware-dependent low
  * level driver of CPUFreq support, and its spinlock. This lock
@@ -458,6 +462,35 @@ static ssize_t store_##file_name					\
 
 store_one(scaling_max_freq, max);
 
+#ifdef CONFIG_HARDLIMIT
+static ssize_t show_max_limit(struct cpufreq_policy *policy, char *buf)
+{
+	return sprintf(buf, "%d\n", maxlimit);
+}
+
+static ssize_t store_max_limit(struct cpufreq_policy *policy, const char *buf, size_t count)
+{
+
+	unsigned int new_maxlimit, i;
+
+	struct cpufreq_frequency_table *table;
+
+	if (!sscanf(buf, "%du", &new_maxlimit))
+		return -EINVAL;
+
+	table = cpufreq_frequency_get_table(0); /* Get frequency table */
+
+	for (i = 0; (table[i].frequency != CPUFREQ_TABLE_END); i++)
+		if (table[i].frequency == new_maxlimit) {
+		    maxlimit = new_maxlimit;
+		    return count;
+		}
+
+	return -EINVAL;
+
+}
+#endif
+
 /**
  * show_cpuinfo_cur_freq - current CPU frequency as detected by hardware
  */
@@ -633,6 +666,14 @@ static ssize_t show_bios_limit(struct cpufreq_policy *policy, char *buf)
 	return sprintf(buf, "%u\n", policy->cpuinfo.max_freq);
 }
 
+#ifdef CONFIG_CPU_VOLTAGE_CONTROL
+extern ssize_t show_UV_mV_table(struct cpufreq_policy *policy,
+				char *buf);
+
+extern ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
+				 const char *buf, size_t count);
+#endif
+
 cpufreq_freq_attr_ro_perm(cpuinfo_cur_freq, 0400);
 cpufreq_freq_attr_ro(cpuinfo_min_freq);
 cpufreq_freq_attr_ro(cpuinfo_max_freq);
@@ -664,6 +705,12 @@ cpufreq_freq_attr_rw(scaling_min_freq);
 cpufreq_freq_attr_rw(scaling_max_freq);
 cpufreq_freq_attr_rw(scaling_governor);
 cpufreq_freq_attr_rw(scaling_setspeed);
+#ifdef CONFIG_HARDLIMIT
+cpufreq_freq_attr_rw(max_limit);
+#endif
+#ifdef CONFIG_CPU_VOLTAGE_CONTROL
+cpufreq_freq_attr_rw(UV_mV_table);
+#endif
 
 static struct attribute *default_attrs[] = {
 	&cpuinfo_min_freq.attr,
@@ -681,6 +728,12 @@ static struct attribute *default_attrs[] = {
 	&scaling_driver.attr,
 	&scaling_available_governors.attr,
 	&scaling_setspeed.attr,
+#ifdef CONFIG_HARDLIMIT
+	&max_limit.attr,
+#endif
+#ifdef CONFIG_CPU_VOLTAGE_CONTROL
+	&UV_mV_table.attr,
+#endif
 	NULL
 };
 
@@ -1748,6 +1801,7 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 				struct cpufreq_policy *policy)
 {
 	int ret = 0;
+	struct cpufreq_policy *cpu0_policy = NULL;
 
 	pr_debug("setting new policy for CPU %u: %u - %u kHz\n", policy->cpu,
 		policy->min, policy->max);
@@ -1769,6 +1823,21 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 	if (ret)
 		goto error_out;
 
+#ifdef CONFIG_HARDLIMIT
+	if (policy->cpuinfo.max_freq != maxlimit)
+	{
+		policy->cpuinfo.max_freq = maxlimit;
+	}
+	if (policy->max > maxlimit)
+	{
+		policy->max = maxlimit;
+	}
+	if (policy->user_policy.max > maxlimit)
+	{
+		policy->user_policy.max = maxlimit;
+	}
+#endif
+
 	/* adjust if necessary - all reasons */
 	blocking_notifier_call_chain(&cpufreq_policy_notifier_list,
 			CPUFREQ_ADJUST, policy);
@@ -1783,12 +1852,33 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 	if (ret)
 		goto error_out;
 
+#ifdef CONFIG_HARDLIMIT
+	if (policy->cpuinfo.max_freq != maxlimit)
+	{
+		policy->cpuinfo.max_freq = maxlimit;
+	}
+	if (policy->max > maxlimit)
+	{
+		policy->max = maxlimit;
+	}
+	if (policy->user_policy.max > maxlimit)
+	{
+		policy->user_policy.max = maxlimit;
+	}
+#endif
+
 	/* notification of the new policy */
 	blocking_notifier_call_chain(&cpufreq_policy_notifier_list,
 			CPUFREQ_NOTIFY, policy);
 
-	data->min = policy->min;
-	data->max = policy->max;
+	if (policy->cpu) {
+		cpu0_policy = __cpufreq_cpu_get(0,0);
+		data->min = cpu0_policy->min;
+		data->max = cpu0_policy->max;
+	} else {
+		data->min = policy->min;
+		data->max = policy->max;
+	}
 
 	pr_debug("new min and max freqs are %u - %u kHz\n",
 					data->min, data->max);
@@ -1809,7 +1899,12 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 				__cpufreq_governor(data, CPUFREQ_GOV_STOP);
 
 			/* start new governor */
-			data->governor = policy->governor;
+			if (policy->cpu && cpu0_policy) {
+				data->governor = cpu0_policy->governor;
+			} else {
+				data->governor = policy->governor;
+			}
+
 			if (__cpufreq_governor(data, CPUFREQ_GOV_START)) {
 				/* new governor failed, so re-start old one */
 				pr_debug("starting governor %s failed\n",
