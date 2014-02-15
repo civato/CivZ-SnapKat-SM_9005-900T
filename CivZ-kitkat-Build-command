@@ -1,14 +1,14 @@
 #Building command -Euro
 export ARCH=arm
 export CROSS_COMPILE=~/KERNEL/TOOLCHAINS/arm-eabi-4.7/bin/arm-eabi-
-make VARIANT_DEFCONFIG=msm8974_sec_hlte_eur_defconfig CivZ_defconfig SELINUX_DEFCONFIG=selinux_defconfig
+make VARIANT_DEFCONFIG=msm8974_sec_hlte_eur_defconfig CivZ_SM9005_defconfig SELINUX_DEFCONFIG=selinux_defconfig
 make -j5
 ./scripts/dtbTool -s 2048 -o arch/arm/boot/dt.img arch/arm/boot/
 
 #Building command Tmobile
 export ARCH=arm
 export CROSS_COMPILE=~/KERNEL/TOOLCHAINS/arm-eabi-4.7/bin/arm-eabi-
-make VARIANT_DEFCONFIG=msm8974_sec_hlte_tmo_defconfig CivZ_defconfig SELINUX_DEFCONFIG=selinux_defconfig
+make VARIANT_DEFCONFIG=msm8974_sec_hlte_tmo_defconfig CivZ_SM900T_defconfig SELINUX_DEFCONFIG=selinux_defconfig
 make -j5
 ./scripts/dtbTool -s 2048 -o arch/arm/boot/dt.img arch/arm/boot/
 
