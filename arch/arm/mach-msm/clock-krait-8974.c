@@ -21,7 +21,10 @@
 #include <linux/regulator/consumer.h>
 #include <linux/of.h>
 #include <linux/cpumask.h>
+
+#ifdef CONFIG_CPU_VOLTAGE_CONTROL
 #include <linux/cpufreq.h>
+#endif
 
 #include <asm/cputype.h>
 
@@ -581,7 +584,11 @@ static void krait_update_uv(int *uv, int num, int boost_uv)
 	case 0x511F04D1: /* KR28M2A21 */
 	case 0x510F06F0: /* KR28M4A10 */
 		for (i = 0; i < num; i++)
+#ifdef CONFIG_CPU_VOLTAGE_CONTROL
 			uv[i] = max(1200000, uv[i]);
+#else
+			uv[i] = max(1150000, uv[i]);
+#endif
 	};
 
 	if (enable_boost) {
