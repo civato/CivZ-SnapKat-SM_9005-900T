@@ -1,7 +1,7 @@
 VERSION = 3
 PATCHLEVEL = 4
-SUBLEVEL = 0
-EXTRAVERSION =
+SUBLEVEL = 39
+EXTRAVERSION =~CivZ-SnapKat-Rev2.8-N9005~
 NAME = Saber-toothed Squirrel
 
 # *DOCUMENTATION*
@@ -193,7 +193,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?= arm
-CROSS_COMPILE	?=/home/opensource.m/toolchains/arm-eabi-4.7/bin/arm-eabi-
+CROSS_COMPILE ?= ~/KERNEL/TOOLCHAINS/gcc-linaro-4.8/bin/arm-linux-gnueabihf-
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
@@ -372,6 +372,10 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
+                   -mtune=cortex-a15 \
+                   -fmodulo-sched -fmodulo-sched-allow-regmoves \
+                   -funswitch-loops -fpredictive-commoning -fgcse-after-reload \
+		   -Wno-sizeof-pointer-memaccess \
 		   -fno-delete-null-pointer-checks
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
@@ -571,7 +575,7 @@ endif
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
 ifneq ($(CONFIG_FRAME_WARN),0)
-KBUILD_CFLAGS += $(call cc-option,-Wframe-larger-than=${CONFIG_FRAME_WARN})
+KBUILD_CFLAGS += $(call cc-disable-warning, array-bounds)
 endif
 
 # Force gcc to behave correct even for buggy distributions
