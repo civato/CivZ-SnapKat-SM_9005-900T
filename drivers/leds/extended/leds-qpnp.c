@@ -3901,7 +3901,7 @@ static ssize_t led_speed_off_store(struct device *dev,
 static ssize_t led_intensity_show(struct device *dev,
                     struct device_attribute *attr, char *buf)
 {
-	return sprintf(buf, "%u", led_intensity);
+	return sprintf(buf, "%u\n", led_intensity);
 }
 
 static ssize_t led_intensity_store(struct device *dev,
@@ -3927,7 +3927,7 @@ static ssize_t led_xctrl_info_show(struct device *dev,
 	return sprintf(buf, "Extended LED Control v1.1 by Yank555.lu\n\n"
 			    "  LED  on speed : %ux\n"
 			    "  LED off speed : %ux\n"
-			    "  LED intensity : %u/255\n",
+			    "  LED intensity : %ux/255\n",
 			    led_speed_on,
 			    led_speed_off,
 			    led_intensity);
