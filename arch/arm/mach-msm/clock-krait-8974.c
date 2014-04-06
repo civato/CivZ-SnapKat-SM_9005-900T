@@ -610,7 +610,7 @@ ssize_t show_UV_mV_table(struct cpufreq_policy *policy,
 	if (!buf)
 		return -EINVAL;
 
-	for (i = num_levels; i > 0; i--) {
+	for (i = 0; i < num_levels; i++) {
 		freq = use_for_scaling(cpu_clk[cpu]->fmax[i] / 1000);
 		if (freq < 0)
 			continue;
@@ -636,7 +636,7 @@ ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
 		return -EINVAL;
 	}
 
-	for (i = num_levels; i > 0; i--) {
+	for (i = 0; i < num_levels; i++) {
 		if (use_for_scaling(cpu_clk[cpu]->fmax[i] / 1000) < 0)
 			continue;
 
